@@ -5,7 +5,6 @@ import mysql.connector
 
 def lambda_handler(event, context):
     # TODO implement
-    print("start...")
     print(event["Records"][0]["s3"])
 
 
@@ -27,7 +26,7 @@ def lambda_handler(event, context):
         # 获取对象url
         obj_url = "https://" + bucketNM + ".s3.me-central-1.amazonaws.com/" + obj.key
         #把源s3 bucket中的所有对象的key组装成一个待删除列表
-        obj_path.append({'Path': obj_url})
+        obj_path.append(obj_url)
         i = i + 1
         breaknum = breaknum - 1
         if breaknum == 0:
@@ -35,33 +34,18 @@ def lambda_handler(event, context):
 
     print(obj_path)
 
-    mydb = mysql.connector.connect(
-        host="database-test-1.cppsarmc7haf.me-central-1.rds.amazonaws.com",
-        user="admin",
-        password="Jb3figgznN7U",
-        database="s3test"
-    )
+
 
     mycursor = mydb.cursor()
 
     for url in obj_path:
-        sql = "INSERT INTO s3_bucket_obj (s3url) VALUES (url);"
-        mycursor.execute(sql)
+        sql = "INSERT INTO s3_bucket_obj (s3url) VALUES (%s);"
+        mycursor.execute(sql, (url,))
 
     mydb.commit()
 
     print(mycursor.rowcount, "record inserted.")
 
-
-    # client = boto3.client('s3')
-    # #删除源s3 bucket中的所有对象
-    # response = client.delete_objects(
-    #     Bucket = bucketNM,
-    #     Delete={
-    #         'Objects': delete_obj
-    #     }
-    # )
-    # print(response)
 
     mail_subject = "There are "+ str(i) + " new objects uploaded in s3"
 
